@@ -23,12 +23,6 @@ After each run, produce its result report before beginning the next dataset;
 do not run the five datasets concurrently.  Keep the output under
 `output\test\tracking_results\ostrack\vitb_256_mae_ce_32x4_ep300_fulltn_samurai`.
 
-### Run record
-
-| Date | Dataset | Checkpoint | Completed sequences | AUC | Precision | Norm Precision | Wall time | Notes |
-| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |
-| 2026-07-10 | VisDrone | `pretrained_models\OSTrack_ep0300.pth.tar` | 86 / 86 | 66.21 | 86.47 | 84.50 | 25m 34s | SAMURAI test-time configuration; no matched original-OSTrack baseline has been rerun yet. |
-
 Before starting a long run, verify that the experiment YAML preserves the
 300-epoch baseline test geometry: `TEST.SEARCH_SIZE=256`,
 `TEST.SEARCH_FACTOR=4.0`, `TEST.TEMPLATE_SIZE=128`, and
