@@ -1,5 +1,41 @@
 # OSTrack Experiment Runbook
 
+## SAMURAI test-time evaluation (2026-07-10)
+
+Fixed inputs for this experiment:
+
+- Python: `D:\Anaconda\envs\track\python.exe`
+- Checkpoint: `D:\PyCharm\Projects\OSTrack-main\pretrained_models\OSTrack_ep0300.pth.tar`
+- Configuration: `vitb_256_mae_ce_32x4_ep300_fulltn_samurai`
+- Dataset order: `visdrone`, `uavdt`, `dtb70`, `uav123`, `lasot`.
+
+Run exactly one dataset at a time.  The checkpoint argument overrides the
+normal config-derived checkpoint path, so no checkpoint is copied or renamed.
+
+```powershell
+$python = 'D:\Anaconda\envs\track\python.exe'
+$checkpoint = 'D:\PyCharm\Projects\OSTrack-main\pretrained_models\OSTrack_ep0300.pth.tar'
+& $python -u tracking\test.py ostrack vitb_256_mae_ce_32x4_ep300_fulltn_samurai `
+    --dataset_name visdrone --threads 0 --num_gpus 1 --checkpoint $checkpoint
+```
+
+After each run, produce its result report before beginning the next dataset;
+do not run the five datasets concurrently.  Keep the output under
+`output\test\tracking_results\ostrack\vitb_256_mae_ce_32x4_ep300_fulltn_samurai`.
+
+### Run record
+
+| Date | Dataset | Checkpoint | Completed sequences | AUC | Precision | Norm Precision | Wall time | Notes |
+| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |
+| 2026-07-10 | VisDrone | `pretrained_models\OSTrack_ep0300.pth.tar` | 86 / 86 | 66.21 | 86.47 | 84.50 | 25m 34s | SAMURAI test-time configuration; no matched original-OSTrack baseline has been rerun yet. |
+
+Before starting a long run, verify that the experiment YAML preserves the
+300-epoch baseline test geometry: `TEST.SEARCH_SIZE=256`,
+`TEST.SEARCH_FACTOR=4.0`, `TEST.TEMPLATE_SIZE=128`, and
+`TEST.TEMPLATE_FACTOR=2.0`.  Leaving these fields at the global defaults
+(320/5.0) is incompatible with this checkpoint and causes a response-window
+shape mismatch.
+
 本文档记录在当前 Windows 工作站上启动和轮询 OSTrack 长时间训练/测试任务的方法。后续上下文压缩后，优先按这里执行。
 
 ## 环境

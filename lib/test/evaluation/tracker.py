@@ -34,7 +34,7 @@ class Tracker:
     """
 
     def __init__(self, name: str, parameter_name: str, dataset_name: str, run_id: int = None, display_name: str = None,
-                 result_only=False):
+                 result_only=False, checkpoint: str = None):
         assert run_id is None or isinstance(run_id, int)
 
         self.name = name
@@ -42,6 +42,7 @@ class Tracker:
         self.dataset_name = dataset_name
         self.run_id = run_id
         self.display_name = display_name
+        self.checkpoint = checkpoint
 
         env = env_settings()
         if self.run_id is None:
@@ -72,6 +73,10 @@ class Tracker:
             multiobj_mode: Which mode to use for multiple objects.
         """
         params = self.get_parameters()
+        if self.checkpoint is not None:
+            if not os.path.isfile(self.checkpoint):
+                raise FileNotFoundError('Checkpoint not found: {}'.format(self.checkpoint))
+            params.checkpoint = self.checkpoint
 
         debug_ = debug
         if debug is None:
@@ -158,6 +163,10 @@ class Tracker:
         """
 
         params = self.get_parameters()
+        if self.checkpoint is not None:
+            if not os.path.isfile(self.checkpoint):
+                raise FileNotFoundError('Checkpoint not found: {}'.format(self.checkpoint))
+            params.checkpoint = self.checkpoint
 
         debug_ = debug
         if debug is None:
