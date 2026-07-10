@@ -14,6 +14,7 @@ import os
 from lib.test.tracker.data_utils import Preprocessor
 from lib.utils.box_ops import clip_box
 from lib.utils.ce_utils import generate_mask_cond
+from lib.test.tracker.samurai_motion import BoxKalmanFilter, box_iou_xywh
 
 
 class OSTrack(BaseTracker):
@@ -47,6 +48,8 @@ class OSTrack(BaseTracker):
         # for save boxes from all queries
         self.save_all_boxes = params.save_all_boxes
         self.z_dict1 = {}
+        self.samurai_cfg = self.cfg.TEST.SAMURAI
+        self.kalman_filter = None
 
     def initialize(self, image, info: dict):
         # forward the template once
@@ -65,6 +68,11 @@ class OSTrack(BaseTracker):
 
         # save states
         self.state = info['init_bbox']
+        if self.samurai_cfg.ENABLE:
+            self.kalman_filter = BoxKalmanFilter(
+                self.state,
+                process_noise=self.samurai_cfg.PROCESS_NOISE,
+                measurement_noise=self.samurai_cfg.MEASUREMENT_NOISE)
         self.frame_id = 0
         if self.save_all_boxes:
             '''save all predicted boxes'''
@@ -88,13 +96,17 @@ class OSTrack(BaseTracker):
         # add hann windows
         pred_score_map = out_dict['score_map']
         response = self.output_window * pred_score_map
-        pred_boxes = self.network.box_head.cal_bbox(response, out_dict['size_map'], out_dict['offset_map'])
-        pred_boxes = pred_boxes.view(-1, 4)
-        # Baseline: Take the mean of all pred boxes as the final result
-        pred_box = (pred_boxes.mean(
-            dim=0) * self.params.search_size / resize_factor).tolist()  # (cx, cy, w, h) [0,1]
-        # get the final box result
-        self.state = clip_box(self.map_box_back(pred_box, resize_factor), H, W, margin=10)
+        if self.samurai_cfg.ENABLE:
+            self.state = self._select_motion_aware_candidate(
+                response, out_dict['size_map'], out_dict['offset_map'], resize_factor, H, W)
+            pred_boxes = self.network.box_head.cal_bbox(response, out_dict['size_map'], out_dict['offset_map']).view(-1, 4)
+        else:
+            pred_boxes = self.network.box_head.cal_bbox(response, out_dict['size_map'], out_dict['offset_map'])
+            pred_boxes = pred_boxes.view(-1, 4)
+            # Original OSTrack decoding, retained exactly for the baseline.
+            pred_box = (pred_boxes.mean(
+                dim=0) * self.params.search_size / resize_factor).tolist()
+            self.state = clip_box(self.map_box_back(pred_box, resize_factor), H, W, margin=10)
 
         # for debug
         if self.debug:
@@ -131,6 +143,55 @@ class OSTrack(BaseTracker):
                     "all_boxes": all_boxes_save}
         else:
             return {"target_bbox": self.state}
+
+    def _select_motion_aware_candidate(self, response, size_map, offset_map, resize_factor, image_h, image_w):
+        """Rank NMS-separated response peaks with SAMURAI-style motion agreement."""
+        predicted_box = self.kalman_filter.predict()
+        flat_response = response.flatten()
+        nms_kernel = int(self.samurai_cfg.NMS_KERNEL)
+        if nms_kernel < 1 or nms_kernel % 2 == 0:
+            raise ValueError('TEST.SAMURAI.NMS_KERNEL must be a positive odd integer.')
+        pooled = torch.nn.functional.max_pool2d(response, nms_kernel, stride=1, padding=nms_kernel // 2)
+        peak_scores = response.masked_fill(response.ne(pooled), -float('inf')).flatten()
+        num_candidates = min(int(self.samurai_cfg.TOPK), peak_scores.numel())
+        if num_candidates < 1:
+            raise ValueError('TEST.SAMURAI.TOPK must be at least one.')
+        candidate_scores, candidate_idx = torch.topk(peak_scores, k=num_candidates)
+        # In the degenerate case where NMS yields fewer peaks, retain valid raw locations.
+        if torch.isinf(candidate_scores).any():
+            candidate_scores, candidate_idx = torch.topk(flat_response, k=num_candidates)
+
+        feat_w = response.shape[-1]
+        idx_y = candidate_idx // feat_w
+        idx_x = candidate_idx % feat_w
+        flattened_idx = candidate_idx.view(1, 1, -1).expand(1, 2, -1)
+        sizes = size_map.flatten(2).gather(2, flattened_idx).squeeze(0).transpose(0, 1)
+        offsets = offset_map.flatten(2).gather(2, flattened_idx).squeeze(0).transpose(0, 1)
+        candidate_boxes = torch.stack([
+            (idx_x.float() + offsets[:, 0]) / self.feat_sz,
+            (idx_y.float() + offsets[:, 1]) / self.feat_sz,
+            sizes[:, 0], sizes[:, 1]], dim=1)
+        candidate_boxes = candidate_boxes * self.params.search_size / resize_factor
+        candidate_boxes = self.map_box_back_batch(candidate_boxes, resize_factor)
+
+        alpha = float(self.samurai_cfg.MOTION_WEIGHT)
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError('TEST.SAMURAI.MOTION_WEIGHT must be in [0, 1].')
+        best_box, best_score, best_iou, best_appearance = None, -float('inf'), 0.0, 0.0
+        for box, appearance_score in zip(candidate_boxes.tolist(), candidate_scores.tolist()):
+            box = clip_box(box, image_h, image_w, margin=10)
+            motion_iou = box_iou_xywh(predicted_box, box)
+            fused_score = (1.0 - alpha) * float(appearance_score) + alpha * motion_iou
+            if fused_score > best_score:
+                best_box, best_score = box, fused_score
+                best_iou, best_appearance = motion_iou, float(appearance_score)
+
+        # The output always follows the highest fused candidate.  The Kalman
+        # state is updated only by measurements that pass both reliability gates.
+        if (best_appearance >= float(self.samurai_cfg.MIN_SCORE)
+                and best_iou >= float(self.samurai_cfg.MIN_IOU)):
+            self.kalman_filter.update(best_box)
+        return best_box
 
     def map_box_back(self, pred_box: list, resize_factor: float):
         cx_prev, cy_prev = self.state[0] + 0.5 * self.state[2], self.state[1] + 0.5 * self.state[3]

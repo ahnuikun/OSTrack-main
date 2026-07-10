@@ -100,6 +100,19 @@ cfg.TEST.SEARCH_FACTOR = 5.0
 cfg.TEST.SEARCH_SIZE = 320
 cfg.TEST.EPOCH = 500
 
+# TEST.SAMURAI
+# Test-time-only motion-aware candidate selection.  All parameters below leave
+# the OSTrack network and its checkpoint untouched.
+cfg.TEST.SAMURAI = edict()
+cfg.TEST.SAMURAI.ENABLE = False
+cfg.TEST.SAMURAI.TOPK = 5
+cfg.TEST.SAMURAI.NMS_KERNEL = 3
+cfg.TEST.SAMURAI.MOTION_WEIGHT = 0.35
+cfg.TEST.SAMURAI.MIN_SCORE = 0.15
+cfg.TEST.SAMURAI.MIN_IOU = 0.05
+cfg.TEST.SAMURAI.PROCESS_NOISE = 1.0
+cfg.TEST.SAMURAI.MEASUREMENT_NOISE = 10.0
+
 
 def _edict2dict(dest_dict, src_edict):
     if isinstance(dest_dict, dict) and isinstance(src_edict, dict):
