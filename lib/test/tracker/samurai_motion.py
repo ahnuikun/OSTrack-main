@@ -57,3 +57,15 @@ class BoxKalmanFilter:
         innovation = measurement - self.update_mat @ self.mean
         self.mean = self.mean + gain @ innovation
         self.covariance = (np.eye(8, dtype=np.float32) - gain @ self.update_mat) @ self.covariance
+
+    def innovation_mahalanobis(self, measurement_box):
+        """Squared normalized innovation for a proposed xywh measurement.
+
+        ``predict`` must be called first.  Under the Kalman measurement model,
+        this statistic follows a chi-square distribution with four degrees of
+        freedom, which gives the update gate a fixed probabilistic meaning.
+        """
+        measurement = xywh_to_cxcywh(measurement_box)
+        innovation = measurement - self.update_mat @ self.mean
+        projected_cov = self.update_mat @ self.covariance @ self.update_mat.T + self.measurement_cov
+        return float(innovation.T @ np.linalg.solve(projected_cov, innovation))

@@ -19,7 +19,8 @@
 | UAVDT | 50 / 50 | 63.86 | 86.22 | 74.57 | 10m 28s | Complete |
 | DTB70 | 70 / 70 | 66.88 | 87.50 | 82.21 | 5m 39s | Complete |
 | UAV123 | 123 / 123 | 67.56 | 87.79 | 82.79 | 31m 22s | Complete |
-| LaSOT | — | — | — | — | — | Pending |
+| LaSOT | 280 / 280 | 69.00 | 74.77 | 78.58 | 2h 58m 34s | Complete |
+| **Average** | — | **66.70** | **84.55** | **80.53** | — | Complete |
 
 ## Per-dataset analysis
 
@@ -61,6 +62,51 @@
 - A fair conclusion about this test-time module still requires comparison with
   the same 300-epoch checkpoint run using the unchanged OSTrack decoder.
 
+### LaSOT
+
+- Results were calculated over all 280 sequences: AUC 69.00, Precision 74.77,
+  and Norm Precision 78.58.
+- The full evaluation completed without runtime errors in 2h 58m 34s.
+- The result is effectively tied with the supplied 300-epoch retraining
+  baseline on this long-term benchmark; the test-time motion selection does
+  not show a material long-term gain here.
+
+## Comparison with supplied reference results
+
+The following deltas are this test-time SAMURAI configuration minus the values
+in the supplied screenshots.  `Official` denotes the author-provided 256 model
+results; `Retrained` denotes the user's four-RTX-4090 300-epoch baseline.
+
+| Dataset | SAMURAI AUC / P / NP | Delta vs Official | Delta vs Retrained |
+| --- | --- | --- | --- |
+| VisDrone | 66.21 / 86.47 / 84.50 | +0.57 / +0.60 / +2.54 | +0.96 / +1.30 / +0.72 |
+| UAVDT | 63.86 / 86.22 / 74.57 | +2.09 / +3.28 / +2.20 | +1.55 / +1.53 / +1.75 |
+| DTB70 | 66.88 / 87.50 / 82.21 | -1.20 / -1.17 / -1.23 | +0.32 / +0.58 / +0.47 |
+| UAV123 | 67.56 / 87.79 / 82.79 | -1.01 / -1.60 / -1.48 | -0.71 / -1.01 / -1.02 |
+| LaSOT | 69.00 / 74.77 / 78.58 | +0.03 / -0.22 / +0.01 | +0.12 / -0.04 / +0.04 |
+| **Average** | **66.70 / 84.55 / 80.53** | **+0.10 / +0.18 / +0.41** | **+0.45 / +0.47 / +0.39** |
+
+### Overall interpretation
+
+- The strongest and most relevant evidence is on the two UAV-focused sets:
+  VisDrone and UAVDT improve over the matched retrained baseline in every
+  reported metric.  UAVDT has the largest AUC gain (+1.55), consistent with a
+  motion prior helping rapid target displacement and local distractors.
+- DTB70 also improves modestly over the retrained baseline, so the result is
+  positive on three of the four UAV datasets.
+- UAV123 regresses in every metric.  The current fixed Kalman weight and
+  reliability thresholds are therefore not universally safe for all UAV123
+  motion types; the method should not be presented as a uniformly improving
+  replacement for original OSTrack.
+- LaSOT is statistically neutral relative to the retrained baseline.  This is
+  expected for an inference-only motion module with a static initial template:
+  it adds no SAM2-style visual memory and therefore cannot be assumed to solve
+  long-term appearance change.
+- The five-set average improves by +0.45 AUC, +0.47 Precision, and +0.39 Norm
+  Precision over the user's retrained baseline.  The evidence supports this as
+  a UAV-oriented test-time enhancement, subject to an explicit UAV123 failure
+  case and ablation of Top-K, Kalman reranking, and reliable-update gating.
+
 ## Execution log
 
 | Time | Event | Outcome |
@@ -71,3 +117,4 @@
 | 2026-07-10 | Full UAVDT evaluation | Completed 50/50 sequences in 10m 28s; result aggregation successful. |
 | 2026-07-10 | Full DTB70 evaluation | Completed 70/70 sequences in 5m 39s; result aggregation successful. |
 | 2026-07-10 | Full UAV123 evaluation | Completed 123/123 sequences in 31m 22s; result aggregation successful. |
+| 2026-07-10 | Full LaSOT evaluation | Completed 280/280 sequences in 2h 58m 34s; result aggregation successful. |

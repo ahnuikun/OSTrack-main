@@ -1,6 +1,7 @@
 import math
 
 from lib.models.ostrack import build_ostrack
+from lib.models.ostrack.candidate_association import CandidateAssociationNet
 from lib.test.tracker.basetracker import BaseTracker
 import torch
 
@@ -49,7 +50,40 @@ class OSTrack(BaseTracker):
         self.save_all_boxes = params.save_all_boxes
         self.z_dict1 = {}
         self.samurai_cfg = self.cfg.TEST.SAMURAI
+        self.samurai_mode = str(self.samurai_cfg.MODE).lower()
+        if self.samurai_mode not in {'full', 'topk_no_kf', 'kf_no_gate', 'adaptive_kf'}:
+            raise ValueError('TEST.SAMURAI.MODE must be full, topk_no_kf, kf_no_gate, or adaptive_kf.')
         self.kalman_filter = None
+        self.assoc_cfg = self.cfg.TEST.CANDIDATE_ASSOC
+        self.capture_candidate_features = bool(self.assoc_cfg.CAPTURE or self.assoc_cfg.ENABLE)
+        self.association_head = None
+        self.association_memory = None
+        self.last_candidate_record = None
+        self._shallow_feature = None
+        self._shallow_hook = None
+        if self.capture_candidate_features:
+            shallow_layer = int(self.assoc_cfg.SHALLOW_LAYER)
+            if not 0 <= shallow_layer < len(self.network.backbone.blocks):
+                raise ValueError('TEST.CANDIDATE_ASSOC.SHALLOW_LAYER is outside the ViT block range.')
+            self._shallow_hook = self.network.backbone.blocks[shallow_layer].register_forward_hook(
+                self._capture_shallow_feature)
+        if self.assoc_cfg.ENABLE:
+            checkpoint_path = str(self.assoc_cfg.CHECKPOINT)
+            if not checkpoint_path:
+                raise ValueError('TEST.CANDIDATE_ASSOC.CHECKPOINT is required when B2 is enabled.')
+            if not os.path.isabs(checkpoint_path):
+                project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+                checkpoint_path = os.path.join(project_root, checkpoint_path)
+            if not os.path.isfile(checkpoint_path):
+                raise FileNotFoundError('B2 candidate association checkpoint not found: {}'.format(checkpoint_path))
+            self.association_head = CandidateAssociationNet(
+                compressed_dim=int(self.assoc_cfg.COMPRESSED_DIM),
+                hidden_dim=int(self.assoc_cfg.HIDDEN_DIM),
+                embedding_dim=int(self.assoc_cfg.EMBEDDING_DIM),
+                temperature=float(self.assoc_cfg.TEMPERATURE)).cuda()
+            association_checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
+            self.association_head.load_state_dict(association_checkpoint['model_state'], strict=True)
+            self.association_head.eval()
 
     def initialize(self, image, info: dict):
         # forward the template once
@@ -68,12 +102,14 @@ class OSTrack(BaseTracker):
 
         # save states
         self.state = info['init_bbox']
-        if self.samurai_cfg.ENABLE:
+        if self.samurai_cfg.ENABLE and self.samurai_mode != 'topk_no_kf':
             self.kalman_filter = BoxKalmanFilter(
                 self.state,
                 process_noise=self.samurai_cfg.PROCESS_NOISE,
                 measurement_noise=self.samurai_cfg.MEASUREMENT_NOISE)
         self.frame_id = 0
+        self.association_memory = None
+        self.last_candidate_record = None
         if self.save_all_boxes:
             '''save all predicted boxes'''
             all_boxes_save = info['init_bbox'] * self.cfg.MODEL.NUM_OBJECT_QUERIES
@@ -98,7 +134,7 @@ class OSTrack(BaseTracker):
         response = self.output_window * pred_score_map
         if self.samurai_cfg.ENABLE:
             self.state = self._select_motion_aware_candidate(
-                response, out_dict['size_map'], out_dict['offset_map'], resize_factor, H, W)
+                response, out_dict['size_map'], out_dict['offset_map'], resize_factor, H, W, out_dict)
             pred_boxes = self.network.box_head.cal_bbox(response, out_dict['size_map'], out_dict['offset_map']).view(-1, 4)
         else:
             pred_boxes = self.network.box_head.cal_bbox(response, out_dict['size_map'], out_dict['offset_map'])
@@ -141,12 +177,14 @@ class OSTrack(BaseTracker):
             all_boxes_save = all_boxes.view(-1).tolist()  # (4N, )
             return {"target_bbox": self.state,
                     "all_boxes": all_boxes_save}
-        else:
-            return {"target_bbox": self.state}
+        return {"target_bbox": self.state}
 
-    def _select_motion_aware_candidate(self, response, size_map, offset_map, resize_factor, image_h, image_w):
-        """Rank NMS-separated response peaks with SAMURAI-style motion agreement."""
-        predicted_box = self.kalman_filter.predict()
+    def _capture_shallow_feature(self, _module, _inputs, output):
+        """Keep the pre-CE shallow token map from the current backbone pass."""
+        self._shallow_feature = output[0].detach()
+
+    def _extract_topk_candidates(self, response, size_map, offset_map, resize_factor, out_dict):
+        """Decode B1's NMS-separated candidates and, when requested, capture features."""
         flat_response = response.flatten()
         nms_kernel = int(self.samurai_cfg.NMS_KERNEL)
         if nms_kernel < 1 or nms_kernel % 2 == 0:
@@ -171,12 +209,89 @@ class OSTrack(BaseTracker):
             (idx_x.float() + offsets[:, 0]) / self.feat_sz,
             (idx_y.float() + offsets[:, 1]) / self.feat_sz,
             sizes[:, 0], sizes[:, 1]], dim=1)
-        candidate_boxes = candidate_boxes * self.params.search_size / resize_factor
-        candidate_boxes = self.map_box_back_batch(candidate_boxes, resize_factor)
+        candidate_geometry = torch.cat((candidate_scores.unsqueeze(1), candidate_boxes), dim=1)
+        candidate_boxes_image = candidate_boxes * self.params.search_size / resize_factor
+        candidate_boxes_image = self.map_box_back_batch(candidate_boxes_image, resize_factor)
 
+        result = {
+            'scores': candidate_scores,
+            'indices': candidate_idx,
+            'boxes_crop': candidate_boxes,
+            'boxes_image': candidate_boxes_image,
+            'geometry': candidate_geometry,
+        }
+        if self.capture_candidate_features:
+            backbone_feature = out_dict['backbone_feat']
+            if isinstance(backbone_feature, list):
+                backbone_feature = backbone_feature[-1]
+            search_length = self.feat_sz * self.feat_sz
+            deep_search = backbone_feature[:, -search_length:]
+            gather_index = candidate_idx.view(1, -1, 1).expand(1, -1, deep_search.shape[-1])
+            deep = deep_search.gather(1, gather_index).squeeze(0)
+            if self._shallow_feature is None:
+                raise RuntimeError('B2 shallow feature hook did not capture a backbone output.')
+            shallow_search = self._shallow_feature[:, -search_length:]
+            shallow = shallow_search.gather(1, gather_index).squeeze(0)
+            result['deep'] = deep
+            result['shallow'] = shallow
+        return result
+
+    def _select_motion_aware_candidate(self, response, size_map, offset_map, resize_factor, image_h, image_w, out_dict):
+        """Select B1 candidates, optionally with B2 identity association or legacy KF modes."""
+        candidates = self._extract_topk_candidates(response, size_map, offset_map, resize_factor, out_dict)
+        candidate_scores = candidates['scores']
+        candidate_boxes = candidates['boxes_image']
+        num_candidates = candidate_scores.numel()
+
+        if self.capture_candidate_features:
+            # Kept on GPU for the collector; it is overwritten every frame.
+            self.last_candidate_record = {
+                'deep': candidates['deep'].detach(),
+                'shallow': candidates['shallow'].detach(),
+                'geometry': candidates['geometry'].detach(),
+                'boxes_image': candidate_boxes.detach(),
+            }
+
+        if self.association_head is not None:
+            with torch.no_grad():
+                embeddings = self.association_head.encode_raw(
+                    candidates['deep'], candidates['shallow'], candidates['geometry'])
+                appearance_index = int(torch.argmax(candidate_scores).item())
+                if self.association_memory is None:
+                    best_index = appearance_index
+                    self.association_memory = embeddings[best_index].detach()
+                else:
+                    logits = self.association_head.logits(
+                        self.association_memory, embeddings, candidates['geometry']).squeeze(0)
+                    selected_index = int(torch.argmax(logits).item())
+                    if selected_index < num_candidates:
+                        best_index = selected_index
+                        self.association_memory = embeddings[best_index].detach()
+                    else:
+                        # Preserve trusted identity memory on an explicit no-match.
+                        best_index = appearance_index
+            return clip_box(candidate_boxes[best_index].tolist(), image_h, image_w, margin=10)
+
+        if self.samurai_mode == 'topk_no_kf':
+            # Isolate the effect of replacing the original mean decoder with
+            # NMS-separated Top-K candidate extraction and appearance-only choice.
+            best_index = int(torch.argmax(candidate_scores).item())
+            return clip_box(candidate_boxes[best_index].tolist(), image_h, image_w, margin=10)
+
+        predicted_box = self.kalman_filter.predict()
         alpha = float(self.samurai_cfg.MOTION_WEIGHT)
         if not 0.0 <= alpha <= 1.0:
             raise ValueError('TEST.SAMURAI.MOTION_WEIGHT must be in [0, 1].')
+        if self.samurai_mode == 'adaptive_kf':
+            # Normalize the retained response peaks into a discrete local
+            # posterior. Its entropy is zero for a decisive visual response
+            # and one for equally plausible candidates, so motion becomes a
+            # recovery cue rather than a fixed bias on every frame.
+            weights = candidate_scores.clamp_min(0)
+            weights = weights / weights.sum().clamp_min(torch.finfo(weights.dtype).eps)
+            entropy = -(weights * weights.clamp_min(torch.finfo(weights.dtype).eps).log()).sum()
+            entropy = entropy / math.log(float(num_candidates)) if num_candidates > 1 else 0.0
+            alpha *= float(entropy)
         best_box, best_score, best_iou, best_appearance = None, -float('inf'), 0.0, 0.0
         for box, appearance_score in zip(candidate_boxes.tolist(), candidate_scores.tolist()):
             box = clip_box(box, image_h, image_w, margin=10)
@@ -186,10 +301,17 @@ class OSTrack(BaseTracker):
                 best_box, best_score = box, fused_score
                 best_iou, best_appearance = motion_iou, float(appearance_score)
 
-        # The output always follows the highest fused candidate.  The Kalman
-        # state is updated only by measurements that pass both reliability gates.
-        if (best_appearance >= float(self.samurai_cfg.MIN_SCORE)
-                and best_iou >= float(self.samurai_cfg.MIN_IOU)):
+        # The adaptive mode replaces empirical response/IoU thresholds with a
+        # normalized innovation squared (NIS) test for the 4-D box measurement.
+        # The no-gate ablation updates on every selected measurement; full
+        # retains the original reliability protection.
+        if (self.samurai_mode == 'adaptive_kf'
+                and self.kalman_filter.innovation_mahalanobis(best_box)
+                <= float(self.samurai_cfg.MAHALANOBIS_GATE)):
+            self.kalman_filter.update(best_box)
+        elif (self.samurai_mode == 'kf_no_gate'
+                or (best_appearance >= float(self.samurai_cfg.MIN_SCORE)
+                    and best_iou >= float(self.samurai_cfg.MIN_IOU))):
             self.kalman_filter.update(best_box)
         return best_box
 

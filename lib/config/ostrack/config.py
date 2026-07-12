@@ -105,6 +105,13 @@ cfg.TEST.EPOCH = 500
 # the OSTrack network and its checkpoint untouched.
 cfg.TEST.SAMURAI = edict()
 cfg.TEST.SAMURAI.ENABLE = False
+# ``full`` reproduces the existing motion-reranking plus reliable-update gate.
+# The other values are test-side ablations only:
+#   topk_no_kf: select the strongest NMS-separated response candidate;
+#   kf_no_gate: apply KF reranking and update the KF for every selection.
+#   adaptive_kf: apply motion only in response-ambiguous frames and use a
+#                normalized-innovation gate for Kalman measurement updates.
+cfg.TEST.SAMURAI.MODE = 'full'
 cfg.TEST.SAMURAI.TOPK = 5
 cfg.TEST.SAMURAI.NMS_KERNEL = 3
 cfg.TEST.SAMURAI.MOTION_WEIGHT = 0.35
@@ -112,6 +119,19 @@ cfg.TEST.SAMURAI.MIN_SCORE = 0.15
 cfg.TEST.SAMURAI.MIN_IOU = 0.05
 cfg.TEST.SAMURAI.PROCESS_NOISE = 1.0
 cfg.TEST.SAMURAI.MEASUREMENT_NOISE = 10.0
+cfg.TEST.SAMURAI.MAHALANOBIS_GATE = 9.488  # chi-square 0.95 quantile, 4-D box state
+
+# B2: a separately trained candidate association head.  It consumes frozen
+# OSTrack features and is intentionally independent from the network checkpoint.
+cfg.TEST.CANDIDATE_ASSOC = edict()
+cfg.TEST.CANDIDATE_ASSOC.ENABLE = False
+cfg.TEST.CANDIDATE_ASSOC.CAPTURE = False
+cfg.TEST.CANDIDATE_ASSOC.CHECKPOINT = ''
+cfg.TEST.CANDIDATE_ASSOC.SHALLOW_LAYER = 2
+cfg.TEST.CANDIDATE_ASSOC.COMPRESSED_DIM = 128
+cfg.TEST.CANDIDATE_ASSOC.HIDDEN_DIM = 96
+cfg.TEST.CANDIDATE_ASSOC.EMBEDDING_DIM = 96
+cfg.TEST.CANDIDATE_ASSOC.TEMPERATURE = 0.10
 
 
 def _edict2dict(dest_dict, src_edict):
