@@ -1,0 +1,66 @@
+schema_version: 1
+experiment:
+  id: S1-E0-official-development_v2-20260715-r01
+  stage: S1
+  variant: e0
+  association_backend: none
+  adaptation_id: null
+  state: registered
+  hypothesis: Official OSTrack baseline on frozen development_v2
+scope:
+  split_id: cmc_kf_development_v2
+  split_file: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\experiments\cmc_kf_candidate\splits\development_v2.yaml
+  split_sha256: e303308b3c516c513f8d68fbe94b4b95d509f92cb3c194f2e134f193a1abe915
+  expected_sequences: 20
+  expected_frames: 14941
+  development_data: true
+  holdout_opened: false
+  datasets:
+    dtb70:
+    - Surfing12
+    - Surfing04
+    - SUP5
+    - RcCar3
+    - BMX2
+    uavdt:
+    - S1401
+    - S0103
+    - S0402
+    - S0306
+    - S1313
+    visdrone:
+    - uav0000107_01763_s
+    - uav0000237_00001_s
+    - uav0000175_00697_s
+    - uav0000148_00840_s
+    - uav0000198_00000_s
+    uav123:
+    - uav_car13
+    - uav_person4_1
+    - uav_group1_3
+    - uav_car9
+    - uav_person2_2
+code:
+  repo: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate
+  branch: codex/cmc-kf-candidate-v5
+  commit: 4f6d7c1ddeebaca5a3cf1994fd1c8ba825dd5cd7
+  dirty: false
+  source_tree_sha256: a9217d804058accb8f7e0dce5af8cf57c5dd7923da92d37e0acb1b62188e7e0b
+  source_file_count: 160
+model:
+  checkpoint_id: official_vitb256_ce_ep300
+  checkpoint_sha256: 8e01d6251569ac84dbb53fdd062cd938551be2d889582f789aa3070196f42f41
+  tracker_name: ostrack
+  parameter_name: e0__official_vitb256_ce_ep300__v1
+  yaml: vitb_256_mae_ce_32x4_ep300
+  search_size: 256
+runtime:
+  python: D:\Anaconda\envs\track\python.exe
+  gpu_ids:
+  - 0
+  threads: 0
+  num_gpus: 1
+recovery:
+  resume_from_experiment: null
+timestamps:
+  registered_at: '2026-07-15T16:30:54+08:00'
