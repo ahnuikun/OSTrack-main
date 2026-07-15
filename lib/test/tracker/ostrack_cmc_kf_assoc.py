@@ -17,6 +17,10 @@ from lib.test.tracker.cmc_kf_assoc.kalman_box import KalmanBoxFilter
 from lib.test.tracker.cmc_kf_assoc.observation import decide_observation
 from lib.test.tracker.cmc_kf_assoc.response_candidates import extract_mbpp_candidates
 from lib.test.tracker.cmc_kf_assoc.state_propagation import project_box
+from lib.test.tracker.cmc_kf_assoc.switch_control import (
+    CameraConsistentSwitchController,
+    SwitchControlConfig,
+)
 from lib.test.tracker.ostrack import OSTrack as BaselineOSTrack
 from lib.train.data.processing_utils import sample_target
 from lib.utils.box_ops import clip_box
@@ -41,6 +45,14 @@ class OSTrackCMCKFAssoc(BaselineOSTrack):
             maximum_motion_weight=params.maximum_motion_weight,
             mbpp_keep_iou=params.mbpp_keep_iou,
             ambiguity_margin=params.ambiguity_margin)
+        self.switch_controller = None
+        if self.variant_config.get("switch_control_enabled", False):
+            self.switch_controller = CameraConsistentSwitchController(
+                SwitchControlConfig(
+                    minimum_final_margin=params.switch_minimum_final_margin,
+                    confirmation_frames=params.switch_confirmation_frames,
+                    minimum_consistency_iou=params.switch_minimum_consistency_iou,
+                    require_valid_cmc=True))
 
         diagnostic_path = (
             Path(params.diagnostic_root) /
@@ -180,6 +192,13 @@ class OSTrackCMCKFAssoc(BaselineOSTrack):
         decision = associate_candidates(
             candidates, predicted_box, self.association_config,
             q_cmc=q_cmc, q_kf=q_kf, q_ambiguity=association_q_ambiguity)
+        switch_decision = None
+        if self.switch_controller is not None:
+            switch_decision = self.switch_controller.decide(
+                candidates, decision, cmc)
+            decision.selected_index = switch_decision.selected_index
+            decision.selected_rank = switch_decision.selected_rank
+            decision.reason = f"n2_{switch_decision.reason}"
         selected = candidates[decision.selected_index]
         self.state = list(selected.image_box)
 
@@ -237,6 +256,8 @@ class OSTrackCMCKFAssoc(BaselineOSTrack):
             },
             "candidates": [candidate.to_dict() for candidate in candidates],
             "association": decision.to_dict(),
+            "switch_control": (
+                None if switch_decision is None else switch_decision.to_dict()),
             "measurement_accepted": measurement_accepted,
             "rejection_reason": rejection_reason,
             "output_box": self.state,

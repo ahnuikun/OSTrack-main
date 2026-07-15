@@ -1,0 +1,10 @@
+{
+  "experiment_id": "S0-N2-v6-official-visdrone_uav0000222_00900_s-20260715-r01",
+  "state": "completed",
+  "started_at": "2026-07-15T16:22:44+08:00",
+  "finished_at": "2026-07-15T16:24:20+08:00",
+  "exit_code": 0,
+  "completed_sequences": 1,
+  "expected_sequences": 1,
+  "failure_reason": null
+}

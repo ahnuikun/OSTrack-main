@@ -89,6 +89,13 @@ VARIANT_CONFIGS["v4"] = {
 VARIANT_CONFIGS["v5"] = {
     key: dict(value) for key, value in VARIANT_CONFIGS["v4"].items()
 }
+VARIANT_CONFIGS["v6"] = {
+    key: dict(value) for key, value in VARIANT_CONFIGS["v5"].items()
+}
+VARIANT_CONFIGS["v6"]["n2"] = {
+    **VARIANT_CONFIGS["v5"]["e6"],
+    "switch_control_enabled": True,
+}
 
 
 def parameters(parameter_name: str):
@@ -96,7 +103,9 @@ def parameters(parameter_name: str):
     environment = env_settings()
     spec = parse_parameter_name(
         parameter_name, expected_variant=None, expected_version=None,
-        allowed_variants=VARIANT_CONFIGS["v2"], allowed_versions=VARIANT_CONFIGS)
+        allowed_variants=set().union(
+            *(variant_config.keys() for variant_config in VARIANT_CONFIGS.values())),
+        allowed_versions=VARIANT_CONFIGS)
     if spec.variant not in VARIANT_CONFIGS[spec.version]:
         raise ValueError(
             f"variant {spec.variant!r} is not defined for config version {spec.version!r}")
@@ -123,7 +132,7 @@ def parameters(parameter_name: str):
         or spec.version in {"v1", "v2"} else "hann")
     params.observation_policy = (
         "clear_top1_or_consistent"
-        if spec.version in {"v4", "v5"} else "legacy_absolute")
+        if spec.version in {"v4", "v5", "v6"} else "legacy_absolute")
     params.candidate_top_k = 5
     params.mbpp_proposal_count = 30
     params.mbpp_nms_iou = 0.8
@@ -134,6 +143,9 @@ def parameters(parameter_name: str):
     params.observation_min_score = 0.15
     params.observation_strong_score = 0.25
     params.innovation_chi2_threshold = 13.2767
+    params.switch_minimum_final_margin = 0.02
+    params.switch_confirmation_frames = 2
+    params.switch_minimum_consistency_iou = 0.30
     params.diagnostic_root = str(
         Path(environment.save_dir) / "cmc_kf_candidate" / "runtime")
     params.save_all_boxes = False

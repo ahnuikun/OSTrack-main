@@ -64,9 +64,24 @@ related_ablation: E3-E6
 verified_on: S0 output parity plus frozen development_v1 (20 sequences, 12,311 frames) as of 2026-07-15; N1/E6 reached +3.70 AUC points over E0 but failed association-effect and tail-safety gates, so it is not promoted
 ```
 
-### N2 候选（尚未实现、尚未获准评测）
+### N2：margin + 相机补偿滞回（已实现，等待新划分结果）
 
-S1 结果显示 N1 的单帧加权没有约束“微小分数优势造成的闭环轨迹分叉”。下一适配候选借鉴 SAMURAI 的稳定期思想与 NeighborTrack 的时序验证思想，但不复制其代码：仅当 rank 改选具有足够决策间隔并通过短时相机补偿坐标一致性时才提交，否则保持 appearance Top-1。N2 是看到 `development_v1` 结果后提出的，因此不得在原 split 上调参后把结果称为独立验证；必须预注册阈值、冻结新的开发划分，并与 A2/N1/M1 直接比较。
+```text
+adaptation_id: N2
+source_name: SAMURAI stability gating + NeighborTrack temporal verification inspiration
+usage: independently reimplemented and adapted; no NeighborTrack code copied
+source_limitation: N1 commits any per-frame argmax rerank immediately, so a 0.0061 score advantage can split the future crop trajectory even when the local rescue/harm label is neutral
+local_adaptation: require final-score margin >= 0.02; register the first alternative as pending; project the pending box with the next valid CMC homography; commit only after 2 consecutive proposals with projected IoU >= 0.30
+expected_mechanism: suppress isolated low-margin switches while retaining persistent camera-consistent alternatives with one-frame confirmation delay
+local_file_and_symbol: lib/test/tracker/cmc_kf_assoc/switch_control.py::CameraConsistentSwitchController
+independent_toggle: switch_control_enabled
+diagnostic_fields: proposed_rank; selected_rank; final_margin; consistency_iou; pending_count; accepted_rerank; reason
+closest_published_baseline: A2 and N1/E6
+related_ablation: M1 vs E6 vs N2
+verified_on: unit tests and S0 mechanism replay only; development_v2 was frozen before N2 metrics
+```
+
+N2 是看到 `development_v1` 结果后提出的，因此原 split 只允许机制复核，不作为独立 promotion。新的 `development_v2` 使用同一预先定义的 SHA 排序第 11-15 位，与 `development_v1` 和未打开的 `holdout_v1` 均不重叠。
 
 每一项只有在对应 N* 消融优于最接近的 A* 基线、机制诊断一致且长尾安全时，才可以进入论文贡献候选。
 

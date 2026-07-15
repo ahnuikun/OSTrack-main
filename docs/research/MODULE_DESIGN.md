@@ -133,6 +133,7 @@ lib/test/tracker/
     ├── response_candidates.py
     ├── association.py
     ├── observation.py
+    ├── switch_control.py
     └── diagnostics.py
 
 lib/test/parameter/
@@ -145,7 +146,8 @@ tests/cmc_kf_assoc/
 ├── test_state_propagation.py
 ├── test_kalman_box.py
 ├── test_response_candidates.py
-└── test_association.py
+├── test_association.py
+└── test_switch_control.py
 
 tools/cmc_kf_assoc/
 ├── run_experiment.py
@@ -165,7 +167,7 @@ tools/cmc_kf_assoc/
 1. “当前帧 selected IoU 未下降”不能证明关联安全，必须检查闭环后续失败段和重捕能力。
 2. 仅因 Top-1/Top-2 外观接近而增大运动权重不够；任何改选还必须具有明确的决策优势或时序确认。
 3. N1/v5 保留为负结果，不在同一 `development_v1` 上继续调阈值后宣称独立验证。
-4. 下一适配候选应单独登记为 N2：在不增加网络前向的前提下，引入改选滞回/延迟提交，或在相机补偿坐标中做短时反向一致性；最近基线仍为 A2，并在新的冻结开发划分上验证。
+4. N2/v6 在不增加网络前向的前提下实现改选滞回：融合分数 margin 至少 0.02；首次替代提案只登记 pending；下一帧用 CMC 投影 pending 框，与当前替代提案 IoU 至少 0.30 且连续计数达到 2 才提交。CMC 无效、投影失败或候选不一致时保持 Top-1 并重置/重建 pending。
 5. 在 N2 通过前，安全默认方案是 M1（CMC 传播 + KF 预测裁剪 + appearance Top-1），而不是 E6 关联输出。
 
 ## 5. 必须记录的逐帧字段

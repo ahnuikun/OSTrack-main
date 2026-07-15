@@ -1,0 +1,10 @@
+{
+  "experiment_id": "S0-N2-v6-official-dtb70_Animal1-20260715-r01",
+  "state": "completed",
+  "started_at": "2026-07-15T16:22:25+08:00",
+  "finished_at": "2026-07-15T16:22:42+08:00",
+  "exit_code": 0,
+  "completed_sequences": 1,
+  "expected_sequences": 1,
+  "failure_reason": null
+}

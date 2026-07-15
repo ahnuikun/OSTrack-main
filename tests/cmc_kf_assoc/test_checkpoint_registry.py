@@ -34,6 +34,7 @@ def test_v2_ablation_keeps_e2_e3_formula_fixed():
     assert VARIANT_CONFIGS["v3"]["e3"]["association_backend"] == "fixed_iou"
     assert VARIANT_CONFIGS["v4"]["e6"]["observation_rejection"] is True
     assert VARIANT_CONFIGS["v5"]["e6"]["observation_rejection"] is True
+    assert VARIANT_CONFIGS["v6"]["n2"]["switch_control_enabled"] is True
 
 
 def test_experiment_identity_must_match_registry():

@@ -1,0 +1,32 @@
+split_id: cmc_kf_development_v2
+selection_rule: sha256("cmc-kf-candidate-v1:<dataset>:<sequence>") ascending, positions 11-15 per dataset
+created_at: 2026-07-15
+result_blind: true
+derived_before_n2_metrics: true
+datasets:
+  dtb70:
+    - Surfing12
+    - Surfing04
+    - SUP5
+    - RcCar3
+    - BMX2
+  uavdt:
+    - S1401
+    - S0103
+    - S0402
+    - S0306
+    - S1313
+  visdrone:
+    - uav0000107_01763_s
+    - uav0000237_00001_s
+    - uav0000175_00697_s
+    - uav0000148_00840_s
+    - uav0000198_00000_s
+  uav123:
+    - uav_car13
+    - uav_person4_1
+    - uav_group1_3
+    - uav_car9
+    - uav_person2_2
+total_sequences: 20
+total_frames: 14941

@@ -1,0 +1,50 @@
+schema_version: 1
+experiment:
+  id: S0-N2-v6-official-dtb70_Animal1-20260715-r01
+  title: N2 margin and camera-consistent hysteresis preserves the v5 predictive-crop
+    smoke path
+  stage: S0
+  variant: N2
+  association_backend: N2
+  adaptation_id: N2
+  state: registered
+  hypothesis: N2 margin and camera-consistent hysteresis preserves the v5 predictive-crop
+    smoke path
+scope:
+  dataset_id: dtb70
+  dataset: dtb70
+  sequence: Animal1
+  expected_sequences: 1
+  expected_frames: 147
+  development_data: false
+  holdout_opened: false
+code:
+  repo: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate
+  branch: codex/cmc-kf-candidate-v5
+  commit: 6687c4df6a2c8b621d8f6d2027b03958bf4e03c0
+  dirty: true
+  source_tree_sha256: 59f04e0a8d4bf5ca1bb8519f72d4489c5d5b0c47a0d3c9d40d52307fa62aa072
+  source_file_count: 160
+model:
+  checkpoint_id: official_vitb256_ce_ep300
+  tracker_name: ostrack_cmc_kf_assoc
+  parameter_name: n2__official_vitb256_ce_ep300__v6
+  checkpoint_sha256: 8e01d6251569ac84dbb53fdd062cd938551be2d889582f789aa3070196f42f41
+  yaml: vitb_256_mae_ce_32x4_ep300
+  search_size: 256
+runtime:
+  python: D:\Anaconda\envs\track\python.exe
+  gpu_ids:
+  - 0
+  threads: 0
+  num_gpus: 1
+  seed: 42
+artifacts:
+  record_dir: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\experiments\cmc_kf_candidate\records\S0-N2-v6-official-dtb70_Animal1-20260715-r01
+  raw_result_path: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\test\tracking_results\ostrack_cmc_kf_assoc\n2__official_vitb256_ce_ep300__v6\Animal1.txt
+  diagnostic_path: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\cmc_kf_candidate\runtime\n2__official_vitb256_ce_ep300__v6\dtb70\Animal1.jsonl
+recovery:
+  resume_from_experiment: null
+  reused_raw_result: false
+timestamps:
+  registered_at: '2026-07-15T16:22:25+08:00'
