@@ -1,0 +1,2 @@
+experiment_id,dataset_id,scope_sequences,auc,precision,norm_precision,fps
+S0-E0-official-dtb70_Animal1-20260715-r01,dtb70_local_v1,1,53.16,68.71,65.31,75.11174101912066

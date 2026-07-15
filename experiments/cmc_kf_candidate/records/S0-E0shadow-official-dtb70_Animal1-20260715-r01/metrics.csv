@@ -1,0 +1,2 @@
+experiment_id,sequence,result_rows,diagnostic_records,max_abs_box_difference,exact_array_equal,fps
+S0-E0shadow-official-dtb70_Animal1-20260715-r01,Animal1,147,147,0.0,true,63.74444107288614

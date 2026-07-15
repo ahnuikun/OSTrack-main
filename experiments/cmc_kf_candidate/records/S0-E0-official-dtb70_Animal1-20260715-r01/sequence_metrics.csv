@@ -1,0 +1,2 @@
+experiment_id,dataset_id,sequence,frames,per_sequence_overlap_reported,result_rows,result_columns,finite,positive_size
+S0-E0-official-dtb70_Animal1-20260715-r01,dtb70_local_v1,Animal1,147,54.00,147,4,true,true

@@ -1,0 +1,49 @@
+schema_version: 1
+experiment:
+  id: S0-M1-v4-official-dtb70_Animal1-20260715-r01
+  title: Predictive crop alone preserves the v3 crop gain without association intervention
+  stage: S0
+  variant: M1
+  association_backend: A0
+  adaptation_id: null
+  state: registered
+  hypothesis: Predictive crop alone preserves the v3 crop gain without association
+    intervention
+scope:
+  dataset_id: dtb70
+  dataset: dtb70
+  sequence: Animal1
+  expected_sequences: 1
+  expected_frames: 147
+  development_data: false
+  holdout_opened: false
+code:
+  repo: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate
+  branch: codex/cmc-kf-candidate
+  commit: 58f2ecbdcb5ab40bc121d50a09d8c95bde71a664
+  dirty: true
+  source_tree_sha256: fe272d2cdb858ff58ebbcb91805a0acd5808c66560c30192f2410138ab2260c3
+  source_file_count: 157
+model:
+  checkpoint_id: official_vitb256_ce_ep300
+  tracker_name: ostrack_cmc_kf_assoc
+  parameter_name: m1__official_vitb256_ce_ep300__v4
+  checkpoint_sha256: 8e01d6251569ac84dbb53fdd062cd938551be2d889582f789aa3070196f42f41
+  yaml: vitb_256_mae_ce_32x4_ep300
+  search_size: 256
+runtime:
+  python: D:\Anaconda\envs\track\python.exe
+  gpu_ids:
+  - 0
+  threads: 0
+  num_gpus: 1
+  seed: 42
+artifacts:
+  record_dir: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\experiments\cmc_kf_candidate\records\S0-M1-v4-official-dtb70_Animal1-20260715-r01
+  raw_result_path: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\test\tracking_results\ostrack_cmc_kf_assoc\m1__official_vitb256_ce_ep300__v4\Animal1.txt
+  diagnostic_path: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\cmc_kf_candidate\runtime\m1__official_vitb256_ce_ep300__v4\dtb70\Animal1.jsonl
+recovery:
+  resume_from_experiment: null
+  reused_raw_result: false
+timestamps:
+  registered_at: '2026-07-15T14:51:04+08:00'

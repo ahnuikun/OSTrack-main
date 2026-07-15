@@ -10,7 +10,9 @@ from lib.test.analysis.plot_results import print_per_sequence_results, print_res
 from lib.test.evaluation import get_dataset, trackerlist
 
 
-DATASETS = ['visdrone', 'uav123', 'uavdt', 'dtb70', 'lasot']
+# Keep reporting order aligned with the runtime-oriented test order.  This
+# ordering does not assign different importance to the four UAV benchmarks.
+DATASETS = ['dtb70', 'uavdt', 'visdrone', 'uav123', 'lasot']
 
 
 def parse_args():

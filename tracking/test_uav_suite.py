@@ -9,7 +9,9 @@ if prj_path not in sys.path:
 from tracking.test import run_tracker
 
 
-DATASETS = ['visdrone', 'uav123', 'uavdt', 'dtb70', 'lasot']
+# Runtime-oriented order only.  The first four datasets are equally important
+# UAV main benchmarks; LaSOT is the final generalization benchmark.
+DATASETS = ['dtb70', 'uavdt', 'visdrone', 'uav123', 'lasot']
 
 
 def parse_args():
@@ -24,7 +26,7 @@ def parse_args():
                         help='Sequence number or name. Only valid when testing one dataset.')
     parser.add_argument('--debug', type=int, default=0, help='Debug level.')
     parser.add_argument('--threads', type=int, default=0, help='Number of parallel workers.')
-    parser.add_argument('--num_gpus', type=int, default=4, help='Number of GPUs available for testing.')
+    parser.add_argument('--num_gpus', type=int, default=1, help='Number of GPUs available for testing.')
     return parser.parse_args()
 
 

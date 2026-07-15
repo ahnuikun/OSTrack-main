@@ -1,0 +1,54 @@
+schema_version: 1
+experiment:
+  id: S0-E0shadow-official-dtb70_Animal1-20260715-r01
+  title: Output-parity smoke for the integrated CMC-KF tracker with all modules disabled
+  stage: S0
+  variant: E0-shadow
+  association_backend: A0
+  adaptation_id: null
+  state: completed
+  hypothesis: Disabling CMC, KF, and association yields boxes identical to official E0 on every frame.
+scope:
+  dataset_id: dtb70_local_v1
+  dataset: dtb70
+  sequence: Animal1
+  expected_sequences: 1
+  expected_frames: 147
+  development_data: false
+  holdout_opened: false
+code:
+  repo: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate
+  branch: codex/cmc-kf-candidate
+  commit: 58f2ecbdcb5ab40bc121d50a09d8c95bde71a664
+  dirty: true
+  tracked_diff_hash: 860086b956a362087e6530791c485b872053baf6
+model:
+  checkpoint_id: official_vitb256_ce_ep300
+  tracker_name: ostrack_cmc_kf_assoc
+  parameter_name: e0__official_vitb256_ce_ep300__v1
+  yaml: vitb_256_mae_ce_32x4_ep300
+  checkpoint_sha256: 8e01d6251569ac84dbb53fdd062cd938551be2d889582f789aa3070196f42f41
+  search_size: 256
+module:
+  cmc_enabled: false
+  kf_enabled: false
+  candidate_top_k: 5
+  association_enabled: false
+  parameters:
+    proposal_count: 30
+    nms_iou: 0.8
+runtime:
+  python: D:\Anaconda\envs\track\python.exe
+  gpu_ids: [0]
+  threads: 0
+  num_gpus: 1
+comparisons:
+  baseline_experiment_id: S0-E0-official-dtb70_Animal1-20260715-r01
+artifacts:
+  record_dir: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\experiments\cmc_kf_candidate\records\S0-E0shadow-official-dtb70_Animal1-20260715-r01
+  raw_result_dir: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\test\tracking_results\ostrack_cmc_kf_assoc\e0__official_vitb256_ce_ep300__v1
+  diagnostic_dir: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\cmc_kf_candidate\runtime\e0__official_vitb256_ce_ep300__v1\dtb70
+timestamps:
+  registered_at: 2026-07-15T14:22:10+08:00
+  started_at: 2026-07-15T14:22:10+08:00
+  finished_at: 2026-07-15T14:22:59+08:00

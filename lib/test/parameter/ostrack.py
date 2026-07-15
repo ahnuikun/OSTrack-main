@@ -1,16 +1,22 @@
 from lib.test.utils import TrackerParams
-import os
 from lib.test.evaluation.environment import env_settings
 from lib.config.ostrack.config import cfg, update_config_from_file
+from lib.test.parameter.ostrack_checkpoint_registry import (
+    parse_parameter_name,
+    resolve_paths,
+    verify_checkpoint,
+)
 
 
-def parameters(yaml_name: str):
+def parameters(parameter_name: str):
     params = TrackerParams()
     prj_dir = env_settings().prj_dir
     save_dir = env_settings().save_dir
-    # update default config from yaml file
-    yaml_file = os.path.join(prj_dir, 'experiments/ostrack/%s.yaml' % yaml_name)
-    update_config_from_file(yaml_file)
+    spec = parse_parameter_name(
+        parameter_name, expected_variant="e0", expected_version="v1")
+    yaml_file, checkpoint_file = resolve_paths(spec, prj_dir, save_dir)
+    verify_checkpoint(spec, checkpoint_file)
+    update_config_from_file(str(yaml_file))
     params.cfg = cfg
     print("test config: ", cfg)
 
@@ -21,8 +27,10 @@ def parameters(yaml_name: str):
     params.search_size = cfg.TEST.SEARCH_SIZE
 
     # Network checkpoint path
-    params.checkpoint = os.path.join(save_dir, "checkpoints/train/ostrack/%s/OSTrack_ep%04d.pth.tar" %
-                                     (yaml_name, cfg.TEST.EPOCH))
+    params.checkpoint = str(checkpoint_file)
+    params.checkpoint_id = spec.checkpoint_id
+    params.checkpoint_sha256 = spec.sha256
+    params.config_name = spec.config_name
 
     # whether to save boxes from all queries
     params.save_all_boxes = False
