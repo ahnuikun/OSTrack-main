@@ -67,6 +67,7 @@ def main():
     split = yaml.safe_load((REPO / args.split_file).read_text(encoding="utf-8"))
     baseline_record = REPO / "experiments/cmc_kf_candidate/records" / args.baseline_record
     baseline_metrics = load_csv(baseline_record / "metrics.csv")
+    aggregate_dataset = baseline_metrics[-1]["dataset"]
     baseline_sequence_rows = load_csv(baseline_record / "sequence_metrics.csv")
     baseline_auc = {(row["dataset"], row["sequence"]): float(row["auc"])
                     for row in baseline_sequence_rows}
@@ -119,6 +120,8 @@ def main():
         total_times = []
         network_times = []
         motion_weights = []
+        switch_reasons = Counter()
+        proposed_rank_gt1 = accepted_reranks = 0
         for dataset, name in sequence_order:
             delta = sequence_auc[(dataset, name)] - baseline_auc[(dataset, name)]
             deltas.append(delta)
@@ -165,8 +168,13 @@ def main():
                 total_times.append(float(item["timing_ms"]["total"]))
                 network_times.append(float(item["timing_ms"]["network"]))
                 motion_weights.append(float(item["association"]["motion_weight"]))
+                switch = item.get("switch_control")
+                if switch is not None:
+                    switch_reasons[switch["reason"]] += 1
+                    proposed_rank_gt1 += int(switch["proposed_rank"] > 1)
+                    accepted_reranks += int(switch["accepted_rerank"])
             rejection_runs.append(longest_run(rejected_flags))
-        aggregate = next(row for row in metrics if row["dataset"] == "development_v1_all")
+        aggregate = next(row for row in metrics if row["dataset"] == aggregate_dataset)
         worst_index = int(np.argmin(deltas))
         variant_summaries.append({
             "label": label, "parameter": parameter,
@@ -190,6 +198,11 @@ def main():
             "total_time_median_ms": percentile(total_times, 50),
             "total_time_p95_ms": percentile(total_times, 95),
             "network_time_median_ms": percentile(network_times, 50),
+            "proposed_rank_gt1": proposed_rank_gt1,
+            "accepted_reranks": accepted_reranks,
+            "switch_margin_holds": switch_reasons["margin_hold"],
+            "switch_pending_holds": switch_reasons["pending_confirmation"],
+            "switch_consistency_holds": switch_reasons["consistency_hold"],
         })
 
     with (output_dir / "metric_table.csv").open("w", newline="", encoding="utf-8") as stream:
@@ -215,13 +228,13 @@ def main():
     ]
     for label in ["E0"] + [item[0] for item in args.variant_record]:
         row = next(item for item in metric_table
-                   if item["label"] == label and item["dataset"] == "development_v1_all")
+                   if item["label"] == label and item["dataset"] == aggregate_dataset)
         lines.append(f"| {label} | {row['auc']:.2f} | {row['auc'] - baseline_aggregate:+.2f} | "
                      f"{row['precision']:.2f} | {row['norm_precision']:.2f} |")
     lines += ["", "## Per-dataset AUC", "",
               "| Dataset | " + " | ".join(["E0"] + [item[0] for item in args.variant_record]) + " |",
               "|---|" + "---:|" * (1 + len(args.variant_record))]
-    for dataset in list(split["datasets"]) + ["development_v1_all"]:
+    for dataset in list(split["datasets"]) + [aggregate_dataset]:
         values = []
         for label in ["E0"] + [item[0] for item in args.variant_record]:
             row = next(item for item in metric_table
@@ -229,8 +242,8 @@ def main():
             values.append(f"{row['auc']:.2f}")
         lines.append(f"| {dataset} | " + " | ".join(values) + " |")
     lines += ["", "## Tail and mechanism evidence", "",
-              "| Variant | Negative seq | Worst sequence delta | Frame regression P95/P99 | Top5 gain | Recoverable | Rank>1 | Rescue/Harm | CMC valid | Rejects (max run) | Median ms |",
-              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+              "| Variant | Negative seq | Worst sequence delta | Frame regression P95/P99 | Top5 gain | Recoverable | Rank>1 | Rescue/Harm | CMC valid | Rejects (max run) | N2 proposed/accepted | N2 margin/pending/consistency holds | Median ms |",
+              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for row in variant_summaries:
         lines.append(
             f"| {row['label']} | {100*row['negative_sequence_fraction']:.1f}% | "
@@ -239,7 +252,10 @@ def main():
             f"{row['top5_gain_pp']:.2f} pp | {row['recoverable_frames']} | "
             f"{row['selected_rank_gt1']} | {row['rescue_frames']}/{row['harm_frames']} | "
             f"{row['cmc_valid_fraction']:.3f} | {row['rejected_measurements']} "
-            f"({row['longest_rejection_run']}) | {row['total_time_median_ms']:.2f} |")
+            f"({row['longest_rejection_run']}) | "
+            f"{row['proposed_rank_gt1']}/{row['accepted_reranks']} | "
+            f"{row['switch_margin_holds']}/{row['switch_pending_holds']}/"
+            f"{row['switch_consistency_holds']} | {row['total_time_median_ms']:.2f} |")
     e6 = next((row for row in variant_summaries if row["label"] == "E6"), None)
     if e6 is not None:
         candidate_gate = e6["top5_gain_pp"] >= 2.0 and e6["recoverable_frames"] >= 10
@@ -252,7 +268,7 @@ def main():
                             e6["longest_new_failure_run"] <= 10)
         e1_metric = next((item for item in metric_table
                           if item["label"] == "E1" and
-                          item["dataset"] == "development_v1_all"), None)
+                          item["dataset"] == aggregate_dataset), None)
         aggregate_gate = (e6["auc_delta_e0"] >= 0.30 and e1_metric is not None and
                           e6["auc"] >= e1_metric["auc"])
         promotion_gate = aggregate_gate and candidate_gate and association_gate and tail_gate
@@ -267,6 +283,21 @@ def main():
                         for key in sequence_order]
             worst = int(np.argmin(pairwise))
             lines += ["", "## E6 versus M1", "",
+                      f"- Negative sequences: {100*np.mean(np.asarray(pairwise) < 0):.1f}%.",
+                      f"- Worst sequence: {'/'.join(sequence_order[worst])} "
+                      f"({pairwise[worst]:+.2f} AUC points)."]
+    n2 = next((row for row in variant_summaries if row["label"] == "N2"), None)
+    if n2 is not None and "M1" in sequence_auc_by_label and "E6" in sequence_auc_by_label:
+        for reference in ("M1", "E6"):
+            pairwise = [sequence_auc_by_label["N2"][key] -
+                        sequence_auc_by_label[reference][key]
+                        for key in sequence_order]
+            worst = int(np.argmin(pairwise))
+            aggregate_reference = next(
+                item for item in metric_table
+                if item["label"] == reference and item["dataset"] == aggregate_dataset)
+            lines += ["", f"## N2 versus {reference}", "",
+                      f"- Aggregate delta: {n2['auc'] - aggregate_reference['auc']:+.2f} AUC points.",
                       f"- Negative sequences: {100*np.mean(np.asarray(pairwise) < 0):.1f}%.",
                       f"- Worst sequence: {'/'.join(sequence_order[worst])} "
                       f"({pairwise[worst]:+.2f} AUC points)."]

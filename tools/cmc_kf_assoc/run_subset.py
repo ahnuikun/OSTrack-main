@@ -149,7 +149,7 @@ def evaluate_subset(experiment_id, tracker_name, parameter_name, split_data):
     center = torch.cat(aggregate_center, dim=0)
     center_norm = torch.cat(aggregate_center_norm, dim=0)
     metric_rows.append({
-        "dataset": "development_v1_all", "sequences": overlap.shape[0],
+        "dataset": split_data["split_id"], "sequences": overlap.shape[0],
         "frames": sum(row["frames"] for row in metric_rows),
         "auc": float(overlap.mean(dim=0).mean() * 100.0),
         "op50": float(overlap[:, 10].mean() * 100.0),
