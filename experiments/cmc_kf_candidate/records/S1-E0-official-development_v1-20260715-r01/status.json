@@ -1,0 +1,11 @@
+{
+  "experiment_id": "S1-E0-official-development_v1-20260715-r01",
+  "state": "failed",
+  "started_at": "2026-07-15T14:56:30+08:00",
+  "finished_at": "2026-07-15T15:00:06+08:00",
+  "exit_code": 0,
+  "completed_sequences": 12,
+  "expected_sequences": 20,
+  "failure_reason": "OSError: [Errno 22] Invalid argument",
+  "last_sequence": "visdrone/uav0000238_00001_s"
+}

@@ -1,0 +1,11 @@
+{
+  "experiment_id": "S1-E3-v5-official-development_v1-20260715-r01",
+  "state": "completed",
+  "started_at": "2026-07-15T15:14:22+08:00",
+  "finished_at": "2026-07-15T15:24:19+08:00",
+  "exit_code": 0,
+  "completed_sequences": 20,
+  "expected_sequences": 20,
+  "failure_reason": null,
+  "last_sequence": "uav123/uav_wakeboard2"
+}

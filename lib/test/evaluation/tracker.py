@@ -72,6 +72,10 @@ class Tracker:
             multiobj_mode: Which mode to use for multiple objects.
         """
         params = self.get_parameters()
+        params.sequence_name = seq.name
+        params.dataset_name = self.dataset_name
+        params.tracker_name = self.name
+        params.parameter_name = self.parameter_name
 
         debug_ = debug
         if debug is None:

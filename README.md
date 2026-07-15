@@ -1,4 +1,17 @@
 # OSTrack-8
+
+## Current research track
+
+This worktree is reserved for the inference-only CMC-KF candidate-association study. Start from:
+
+- [`docs/research/EXPERIMENT_CHARTER.md`](docs/research/EXPERIMENT_CHARTER.md)
+- [`docs/research/MODULE_DESIGN.md`](docs/research/MODULE_DESIGN.md)
+- [`docs/research/ABLATION_PLAN.md`](docs/research/ABLATION_PLAN.md)
+- [`docs/research/METHOD_SOURCES.md`](docs/research/METHOD_SOURCES.md)
+- [`docs/research/S1_RESULTS_20260715.md`](docs/research/S1_RESULTS_20260715.md)
+- [`EXPERIMENT_RUNBOOK.md`](EXPERIMENT_RUNBOOK.md)
+
+Published methods are reference baselines, not a closed design list. Framework-compatible adaptations must be causal, independently ablated, and explicitly registered. The archived residual-motion project at `D:\PyCharm\Projects\OSTrack-main` remains read-only and is never imported here.
 OSTrack reproduction and adaptation for UAV object tracking.
 
 The official implementation for the **ECCV 2022** paper [_Joint Feature Learning and Relation Modeling for Tracking: A One-Stream Framework_](https://arxiv.org/abs/2203.11991).
@@ -123,10 +136,18 @@ Put the downloaded weights on `$PROJECT_ROOT$/output/checkpoints/train/ostrack`
 
 Change the corresponding values of `lib/test/evaluation/local.py` to the actual benchmark saving paths
 
+This research worktree uses a strict test-time parameter identity:
+`<variant>__<checkpoint_id>__<version>`. The registered official baseline is
+`e0__official_vitb256_ce_ep300__v1`. Legacy YAML-only test names and unregistered
+384/GOT10K checkpoints are rejected intentionally; add their size and SHA256 to
+`experiments/cmc_kf_candidate/CHECKPOINT_REGISTRY.md` and
+`lib/test/parameter/ostrack_checkpoint_registry.py` before using them. Training
+and profiling commands still use YAML config names.
+
 Some testing examples:
 - LaSOT or other off-line evaluated benchmarks (modify `--dataset_name` correspondingly)
 ```
-python tracking/test.py ostrack vitb_384_mae_ce_32x4_ep300 --dataset_name lasot --threads 16 --num_gpus 4
+python tracking/test.py ostrack e0__official_vitb256_ce_ep300__v1 --dataset_name lasot --threads 0 --num_gpus 1
 python tracking/analysis_results.py # need to modify tracker configs and names
 ```
 - GOT10K-test

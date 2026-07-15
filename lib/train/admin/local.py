@@ -3,13 +3,13 @@ import os
 
 class EnvironmentSettings:
     def __init__(self):
-        self.workspace_dir = 'D:/PyCharm/Projects/OSTrack-main/output'
+        self.workspace_dir = 'D:/PyCharm/Projects/OSTrack-main-cmc-kf-candidate/output'
         self.tensorboard_dir = self.workspace_dir + '/tensorboard/'
-        self.pretrained_networks = 'D:/PyCharm/Projects/OSTrack-main/pretrained_models'
+        self.pretrained_networks = 'D:/PyCharm/Projects/OSTrack-main-cmc-kf-candidate/pretrained_models'
         os.makedirs(self.workspace_dir, exist_ok=True)
         os.makedirs(self.tensorboard_dir, exist_ok=True)
 
-        data_dir = 'D:/PyCharm/Projects/OSTrack-main/data'
+        data_dir = 'D:/PyCharm/Projects/OSTrack-main-cmc-kf-candidate/data'
         self.lasot_dir = data_dir + '/lasot/train'
         self.lasot_lmdb_dir = data_dir + '/lasot_lmdb'
         self.got10k_dir = data_dir + '/got10k/train'

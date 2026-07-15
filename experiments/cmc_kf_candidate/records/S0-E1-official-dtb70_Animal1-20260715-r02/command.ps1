@@ -1,0 +1,1 @@
+& 'D:\Anaconda\envs\track\python.exe' '-u' 'tracking/test.py' 'ostrack_cmc_kf_assoc' 'e1__official_vitb256_ce_ep300__v1' '--dataset_name' 'dtb70' '--sequence' 'Animal1' '--threads' '0' '--num_gpus' '1'

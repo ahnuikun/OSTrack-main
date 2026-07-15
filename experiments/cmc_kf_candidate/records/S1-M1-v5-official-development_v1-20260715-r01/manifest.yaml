@@ -1,0 +1,67 @@
+schema_version: 1
+experiment:
+  id: S1-M1-v5-official-development_v1-20260715-r01
+  stage: S1
+  variant: M1
+  association_backend: A0
+  adaptation_id: null
+  state: registered
+  hypothesis: CMC-propagated KF predictive crop improves the frozen development subset
+    before candidate re-ranking
+scope:
+  split_id: cmc_kf_development_v1
+  split_file: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\experiments\cmc_kf_candidate\splits\development_v1.yaml
+  split_sha256: d8c8a2161bb6327a59a0a05f194b41763a6feb3eb0cdd9705d1f61b1243d90ea
+  expected_sequences: 20
+  expected_frames: 12311
+  development_data: true
+  holdout_opened: false
+  datasets:
+    dtb70:
+    - StreetBasketball1
+    - SUP2
+    - SnowBoarding4
+    - SpeedCar2
+    - Sheep1
+    uavdt:
+    - S1604
+    - S0102
+    - S1601
+    - S0501
+    - S1306
+    visdrone:
+    - uav0000222_00900_s
+    - uav0000238_00001_s
+    - uav0000325_01656_s
+    - uav0000072_08448_s
+    - uav0000239_11136_s
+    uav123:
+    - uav_building2
+    - uav_car12
+    - uav_person3_s
+    - uav_car1_3
+    - uav_wakeboard2
+code:
+  repo: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate
+  branch: codex/cmc-kf-candidate
+  commit: 58f2ecbdcb5ab40bc121d50a09d8c95bde71a664
+  dirty: true
+  source_tree_sha256: cdd98ef5af6376f5df4f64b5ae8c232b4e916efffe1b7da91ac823630586d475
+  source_file_count: 157
+model:
+  checkpoint_id: official_vitb256_ce_ep300
+  checkpoint_sha256: 8e01d6251569ac84dbb53fdd062cd938551be2d889582f789aa3070196f42f41
+  tracker_name: ostrack_cmc_kf_assoc
+  parameter_name: m1__official_vitb256_ce_ep300__v5
+  yaml: vitb_256_mae_ce_32x4_ep300
+  search_size: 256
+runtime:
+  python: D:\Anaconda\envs\track\python.exe
+  gpu_ids:
+  - 0
+  threads: 0
+  num_gpus: 1
+recovery:
+  resume_from_experiment: null
+timestamps:
+  registered_at: '2026-07-15T15:03:48+08:00'

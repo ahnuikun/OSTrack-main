@@ -1,0 +1,12 @@
+captured_at=2026-07-15T14:27:14+08:00
+platform=Windows-10-10.0.26200-SP0
+python=3.10.20
+python_executable=D:\Anaconda\envs\track\python.exe
+torch=2.7.0+cu128
+cuda_available=True
+gpu=NVIDIA GeForce RTX 5070
+git_commit=58f2ecbdcb5ab40bc121d50a09d8c95bde71a664
+git_branch=codex/cmc-kf-candidate
+git_dirty=true
+source_tree_sha256=b3f2d37285f117c1ed4b349904bc39575a34adcaa37015d374dbcc48ee981feb
+source_file_count=154

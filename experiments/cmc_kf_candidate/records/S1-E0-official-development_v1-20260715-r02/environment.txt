@@ -1,0 +1,7 @@
+captured_at=2026-07-15T15:00:55+08:00
+python=3.10.20 | packaged by conda-forge | (main, Mar  5 2026, 16:36:49) [MSC v.1944 64 bit (AMD64)]
+torch=2.7.0+cu128
+cuda_available=True
+gpu=NVIDIA GeForce RTX 5070
+source_tree_sha256=cdd98ef5af6376f5df4f64b5ae8c232b4e916efffe1b7da91ac823630586d475
+split_sha256=d8c8a2161bb6327a59a0a05f194b41763a6feb3eb0cdd9705d1f61b1243d90ea

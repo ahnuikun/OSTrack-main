@@ -1,0 +1,50 @@
+schema_version: 1
+experiment:
+  id: S0-E2-official-dtb70_Animal1-20260715-r01
+  title: KF plus MBPP-style candidates runs without CMC and records finite prediction
+    and association diagnostics.
+  stage: S0
+  variant: E2
+  association_backend: A1
+  adaptation_id: null
+  state: registered
+  hypothesis: KF plus MBPP-style candidates runs without CMC and records finite prediction
+    and association diagnostics.
+scope:
+  dataset_id: dtb70_local_v1
+  dataset: dtb70
+  sequence: Animal1
+  expected_sequences: 1
+  expected_frames: 147
+  development_data: false
+  holdout_opened: false
+code:
+  repo: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate
+  branch: codex/cmc-kf-candidate
+  commit: 58f2ecbdcb5ab40bc121d50a09d8c95bde71a664
+  dirty: true
+  source_tree_sha256: b3f2d37285f117c1ed4b349904bc39575a34adcaa37015d374dbcc48ee981feb
+  source_file_count: 154
+model:
+  checkpoint_id: official_vitb256_ce_ep300
+  tracker_name: ostrack_cmc_kf_assoc
+  parameter_name: e2__official_vitb256_ce_ep300__v1
+  checkpoint_sha256: 8e01d6251569ac84dbb53fdd062cd938551be2d889582f789aa3070196f42f41
+  yaml: vitb_256_mae_ce_32x4_ep300
+  search_size: 256
+runtime:
+  python: D:\Anaconda\envs\track\python.exe
+  gpu_ids:
+  - 0
+  threads: 0
+  num_gpus: 1
+  seed: 42
+artifacts:
+  record_dir: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\experiments\cmc_kf_candidate\records\S0-E2-official-dtb70_Animal1-20260715-r01
+  raw_result_path: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\test\tracking_results\ostrack_cmc_kf_assoc\e2__official_vitb256_ce_ep300__v1\Animal1.txt
+  diagnostic_path: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate\output\cmc_kf_candidate\runtime\e2__official_vitb256_ce_ep300__v1\dtb70\Animal1.jsonl
+recovery:
+  resume_from_experiment: null
+  reused_raw_result: false
+timestamps:
+  registered_at: '2026-07-15T14:27:14+08:00'

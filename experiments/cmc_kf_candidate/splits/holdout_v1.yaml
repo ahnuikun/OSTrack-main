@@ -1,0 +1,32 @@
+split_id: cmc_kf_holdout_v1
+selection_rule: sha256("cmc-kf-candidate-v1:<dataset>:<sequence>") ascending, positions 6-10 per dataset
+created_at: 2026-07-15
+result_blind: true
+opened_for_metrics: false
+datasets:
+  dtb70:
+    - SnowBoarding2
+    - Sheep2
+    - Skiing2
+    - Horse1
+    - Basketball
+  uavdt:
+    - S1307
+    - S1303
+    - S1202
+    - S1312
+    - S1311
+  visdrone:
+    - uav0000178_00025_s
+    - uav0000068_01488_s
+    - uav0000200_00000_s
+    - uav0000226_05370_s
+    - uav0000348_02415_s
+  uav123:
+    - uav_bird1_3
+    - uav_car1_s
+    - uav_person18
+    - uav_truck4_1
+    - uav_car6_5
+total_sequences: 20
+total_frames: 15530

@@ -6,10 +6,10 @@ from lib.test.evaluation.environment import EnvSettings
 def local_env_settings():
     settings = EnvSettings()
 
-    data_dir = 'D:/PyCharm/Projects/OSTrack-main/data'
-    save_dir = 'D:/PyCharm/Projects/OSTrack-main/output'
+    data_dir = 'D:/PyCharm/Projects/OSTrack-main-cmc-kf-candidate/data'
+    save_dir = 'D:/PyCharm/Projects/OSTrack-main-cmc-kf-candidate/output'
 
-    settings.prj_dir = 'D:/PyCharm/Projects/OSTrack-main'
+    settings.prj_dir = 'D:/PyCharm/Projects/OSTrack-main-cmc-kf-candidate'
     settings.save_dir = save_dir
     settings.results_path = save_dir + '/test/tracking_results'
     settings.segmentation_path = save_dir + '/test/segmentation_results'

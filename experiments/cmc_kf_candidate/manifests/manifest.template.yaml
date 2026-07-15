@@ -1,0 +1,85 @@
+schema_version: 1
+experiment:
+  id: S0-E0-official-dataset-YYYYMMDD-r01
+  title: replace-me
+  stage: S0
+  variant: E0
+  association_backend: A0
+  adaptation_id: null
+  state: draft
+  hypothesis: replace-me
+  source_limitation: null
+  local_adaptation: null
+  expected_mechanism: null
+  closest_published_baseline: null
+
+scope:
+  dataset_id: replace-me
+  dataset: replace-me
+  benchmark_role: uav_main
+  execution_order_reason: estimated_runtime
+  sequences_file: null
+  expected_sequences: null
+  development_data: false
+  holdout_opened: false
+
+code:
+  repo: D:\PyCharm\Projects\OSTrack-main-cmc-kf-candidate
+  branch: codex/cmc-kf-candidate
+  commit: replace-me
+  dirty: null
+
+model:
+  checkpoint_id: replace-me
+  tracker_name: replace-me
+  parameter_name: replace-me
+  yaml: vitb_256_mae_ce_32x4_ep300
+  checkpoint_path: replace-me
+  checkpoint_sha256: replace-me
+  search_size: 256
+
+module:
+  cmc_enabled: false
+  kf_enabled: false
+  candidate_top_k: 1
+  association_enabled: false
+  cmc_quality_gate: false
+  kf_quality_gate: false
+  appearance_ambiguity_gate: false
+  observation_rejection: false
+  parameters: {}
+
+runtime:
+  python: D:\Anaconda\envs\track\python.exe
+  gpu_ids: [0]
+  threads: 0
+  num_gpus: 1
+  seed: 42
+  command_file: command.ps1
+
+comparisons:
+  baseline_experiment_id: null
+  cmc_only_experiment_id: null
+  archived_sources: []
+
+artifacts:
+  record_dir: replace-me
+  raw_result_dir: replace-me
+  diagnostic_dir: replace-me
+  evaluator_cache_dir: replace-me
+
+gates:
+  aggregate_metric: AUC
+  minimum_delta_vs_e0: null
+  minimum_delta_vs_e1: null
+  maximum_negative_sequence_fraction: null
+  maximum_worst_sequence_loss: null
+  maximum_p95_regression: null
+  maximum_p99_regression: null
+
+timestamps:
+  registered_at: null
+  started_at: null
+  finished_at: null
+
+notes: []
